@@ -1013,20 +1013,36 @@ function requestSelectedService() {
     document.getElementById('consultationFormOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
     
-    // Pre-select the service in the dropdown if we have a selected service
+    // Pre-select the service in the custom dropdown if we have a selected service
     if (currentSelectedService) {
-        const serviceSelect = document.getElementById('consultation-serviciu');
-        if (serviceSelect) {
+        const hiddenInput = document.getElementById('consultation-serviciu');
+        const selector = document.getElementById('consultationServiceSelector');
+        
+        if (hiddenInput && selector) {
             // Use title_original if available (lowercase original title), otherwise lowercase the title
-            const serviceValue = currentSelectedService.title_original || currentSelectedService.title.toLowerCase();
+            const serviceValue = (currentSelectedService.title_original || currentSelectedService.title).toLowerCase();
             
-            // Try to find and select the matching option
-            for (let i = 0; i < serviceSelect.options.length; i++) {
-                if (serviceSelect.options[i].value === serviceValue) {
-                    serviceSelect.selectedIndex = i;
-                    break;
+            // Find the matching option in the dropdown
+            const options = selector.querySelectorAll('.service-option');
+            const currentSpan = selector.querySelector('.service-current');
+            
+            options.forEach(function(option) {
+                const optValue = option.getAttribute('data-value');
+                if (optValue && optValue.toLowerCase() === serviceValue) {
+                    // Set hidden input value
+                    hiddenInput.value = optValue;
+                    
+                    // Update visible text
+                    if (currentSpan) {
+                        currentSpan.textContent = option.textContent.trim();
+                        currentSpan.classList.remove('placeholder');
+                    }
+                    
+                    // Mark as selected
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
                 }
-            }
+            });
         }
     }
 }

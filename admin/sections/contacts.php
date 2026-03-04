@@ -83,7 +83,6 @@ include '../includes/header.php';
 
 <div class="section-header">
     <div class="section-header-content">
-        <h2>Istoric Contacte</h2>
         <p>Vizualizați toate solicitările primite de pe site</p>
     </div>
     <?php if ($total > 0): ?>
@@ -124,83 +123,88 @@ include '../includes/header.php';
 </div>
 <?php else: ?>
 
-<div class="card">
-    <div class="table-responsive">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Nume</th>
-                    <th>Telefon</th>
-                    <th>Serviciu</th>
-                    <th>Sursă</th>
-                    <th>IP</th>
-                    <th style="width: 80px;">Acțiuni</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($contacts as $contact): ?>
-                <tr>
-                    <td>
-                        <span class="text-muted">
-                            <?php echo date('d.m.Y', strtotime($contact['created_at'])); ?>
-                        </span><br>
-                        <small><?php echo date('H:i', strtotime($contact['created_at'])); ?></small>
-                    </td>
-                    <td>
-                        <strong><?php echo htmlspecialchars($contact['name']); ?></strong>
-                    </td>
-                    <td>
-                        <a href="tel:<?php echo preg_replace('/[^+0-9]/', '', $contact['phone']); ?>" style="color: inherit; text-decoration: none;">
-                            <?php echo htmlspecialchars($contact['phone']); ?>
-                        </a>
-                    </td>
-                    <td>
-                        <?php if (!empty($contact['service'])): ?>
-                        <span class="badge badge-info"><?php echo htmlspecialchars($contact['service']); ?></span>
-                        <?php else: ?>
-                        <span class="text-muted">-</span>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php 
-                        $sourceLabel = $contact['source'] === 'consultation_form' ? 'Consultație' : 'Contact';
-                        $sourceClass = $contact['source'] === 'consultation_form' ? 'badge-primary' : 'badge-secondary';
-                        ?>
-                        <span class="badge <?php echo $sourceClass; ?>"><?php echo $sourceLabel; ?></span>
-                    </td>
-                    <td>
-                        <small class="text-muted"><?php echo htmlspecialchars($contact['ip_address'] ?? '-'); ?></small>
-                    </td>
-                    <td>
-                        <form method="POST" style="display: inline;" onsubmit="return confirm('Sigur doriți să ștergeți acest contact?');">
-                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                            <input type="hidden" name="action" value="delete_contact">
-                            <input type="hidden" name="contact_id" value="<?php echo $contact['id']; ?>">
-                            <button type="submit" class="btn btn-sm btn-icon btn-danger" title="Șterge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <polyline points="3 6 5 6 21 6"/>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                </svg>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+<div class="contacts-grid">
+    <?php foreach ($contacts as $contact): ?>
+    <div class="contact-card">
+        <div class="contact-card-header">
+            <div>
+                <div class="contact-card-name"><?php echo htmlspecialchars($contact['name']); ?></div>
+                <div class="contact-card-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline; vertical-align: middle; margin-right: 4px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <?php echo date('d.m.Y H:i', strtotime($contact['created_at'])); ?>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <?php 
+                $sourceLabel = $contact['source'] === 'consultation_form' ? 'Consultație' : 'Contact';
+                $sourceClass = $contact['source'] === 'consultation_form' ? 'badge-primary' : 'badge-secondary';
+                ?>
+                <span class="badge <?php echo $sourceClass; ?>"><?php echo $sourceLabel; ?></span>
+            </div>
+        </div>
+        <div class="contact-card-body">
+            <div class="contact-card-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <a href="tel:<?php echo preg_replace('/[^+0-9]/', '', $contact['phone']); ?>" style="color: var(--admin-primary); font-weight: 500;">
+                    <?php echo htmlspecialchars($contact['phone']); ?>
+                </a>
+            </div>
+            <?php if (!empty($contact['service'])): ?>
+            <div class="contact-card-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <span class="badge badge-info"><?php echo htmlspecialchars($contact['service']); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+        <div class="contact-card-footer">
+            <small class="text-muted">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline; vertical-align: middle; margin-right: 4px;">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+                    <line x1="7" y1="2" x2="7" y2="22"/>
+                    <line x1="17" y1="2" x2="17" y2="22"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <line x1="2" y1="7" x2="7" y2="7"/>
+                    <line x1="2" y1="17" x2="7" y2="17"/>
+                    <line x1="17" y1="17" x2="22" y2="17"/>
+                    <line x1="17" y1="7" x2="22" y2="7"/>
+                </svg>
+                IP: <?php echo htmlspecialchars($contact['ip_address'] ?? '-'); ?>
+            </small>
+            <form method="POST" style="display: inline;" onsubmit="return confirm('Sigur doriți să ștergeți acest contact?');">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                <input type="hidden" name="action" value="delete_contact">
+                <input type="hidden" name="contact_id" value="<?php echo $contact['id']; ?>">
+                <button type="submit" class="btn btn-sm btn-danger" title="Șterge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Șterge
+                </button>
+            </form>
+        </div>
     </div>
+    <?php endforeach; ?>
 </div>
 
 <?php if ($totalPages > 1): ?>
-<div class="pagination" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: center;">
+<div class="pagination">
     <?php if ($page > 1): ?>
     <a href="?page=<?php echo $page - 1; ?>&source=<?php echo $sourceFilter; ?>" class="btn btn-sm btn-outline">&laquo; Anterior</a>
     <?php endif; ?>
     
-    <span class="btn btn-sm" style="background: var(--bg-secondary); pointer-events: none;">
-        Pagina <?php echo $page; ?> din <?php echo $totalPages; ?>
-    </span>
+    <span class="page-info">Pagina <?php echo $page; ?> din <?php echo $totalPages; ?></span>
     
     <?php if ($page < $totalPages): ?>
     <a href="?page=<?php echo $page + 1; ?>&source=<?php echo $sourceFilter; ?>" class="btn btn-sm btn-outline">Următor &raquo;</a>
@@ -209,64 +213,5 @@ include '../includes/header.php';
 <?php endif; ?>
 
 <?php endif; ?>
-
-<style>
-.tabs-container {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-.tab-btn {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-.tab-btn:hover {
-    background: var(--bg-hover);
-}
-.tab-btn.active {
-    background: var(--primary-color);
-    color: white;
-}
-.badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-.badge-info {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-}
-.badge-primary {
-    background: rgba(201, 162, 39, 0.15);
-    color: #c9a227;
-}
-.badge-secondary {
-    background: rgba(100, 116, 139, 0.15);
-    color: #64748b;
-}
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-}
-.empty-state h3 {
-    margin-bottom: 0.5rem;
-}
-.empty-state p {
-    color: var(--text-secondary);
-}
-.btn-icon {
-    padding: 0.4rem;
-    min-width: auto;
-}
-</style>
 
 <?php include '../includes/footer.php'; ?>

@@ -20,17 +20,7 @@
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
                 <a href="<?php echo ADMIN_URL; ?>/dashboard.php" class="sidebar-logo">
-                    <svg viewBox="0 0 240 50" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="5" y="5" width="28" height="38" rx="2" fill="none" stroke="white" stroke-width="2.5"/>
-                        <path d="M23 5 L33 15 L23 15 Z" fill="white"/>
-                        <line x1="11" y1="22" x2="27" y2="22" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="11" y1="28" x2="27" y2="28" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="11" y1="34" x2="22" y2="34" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="30" cy="35" r="10" fill="white"/>
-                        <path d="M25 35 L28 38 L35 31" fill="none" stroke="#1a365d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <text x="48" y="32" font-family="'Poppins', sans-serif" font-size="22" font-weight="700" fill="white">Acte</text>
-                        <text x="98" y="32" font-family="'Poppins', sans-serif" font-size="22" font-weight="700" fill="#c9a227">România</text>
-                    </svg>
+                    <img src="<?php echo SITE_URL; ?>/img/logo2.png" alt="ActeRomânia">
                 </a>
             </div>
             

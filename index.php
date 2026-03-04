@@ -219,7 +219,8 @@ function renderStars($rating) {
         <img src="https://flagcdn.com/w40/eu.png" alt="Uniunea Europeană" class="header-flag header-flag-left" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 24px; height: 16px;">
         <div class="container">
             <a href="#" class="logo">
-                <img src="/img/logo.png" alt="Cetățenia Română Logo" class="logo-img" style="height:90px;max-width:400px;object-fit:contain;"/>
+                <img src="<?php echo SITE_URL; ?>/img/logo.png" alt="Cetățenia Română Logo" class="logo-img logo-desktop" style="height:90px;max-width:400px;object-fit:contain;"/>
+                <img src="<?php echo SITE_URL; ?>/img/logo3.png" alt="Cetățenia Română Logo" class="logo-img logo-mobile" style="height:70px;max-width:280px;object-fit:contain;"/>
             </a>
             <nav class="nav" id="nav">
                 <ul class="nav-list">
@@ -347,14 +348,20 @@ function renderStars($rating) {
                 <span class="form-error" id="error-nume"></span>
             </div>
             <div class="form-group">
-                <label for="consultation-serviciu"><?php _e('form_service'); ?></label>
-                <select id="consultation-serviciu" name="serviciu" required>
-                    <option value=""><?php _e('form_service_placeholder'); ?></option>
-                    <?php foreach ($services as $service): ?>
-                    <option value="<?php echo e(strtolower($service['title'])); ?>"><?php echo e(t($service, 'title')); ?></option>
-                    <?php endforeach; ?>
-                    <option value="altele"><?php _e('form_service_other'); ?></option>
-                </select>
+                <label><?php _e('form_service'); ?></label>
+                <input type="hidden" id="consultation-serviciu" name="serviciu" required value="">
+                <div class="service-selector" id="consultationServiceSelector">
+                    <button type="button" class="service-btn" id="consultationServiceBtn">
+                        <span class="service-current" data-placeholder="<?php _e('form_service_placeholder'); ?>"><?php _e('form_service_placeholder'); ?></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                    <div class="service-dropdown" id="consultationServiceDropdown">
+                        <?php foreach ($services as $service): ?>
+                        <div class="service-option" data-value="<?php echo e(strtolower($service['title'])); ?>"><?php echo e(t($service, 'title')); ?></div>
+                        <?php endforeach; ?>
+                        <div class="service-option" data-value="altele"><?php _e('form_service_other'); ?></div>
+                    </div>
+                </div>
                 <span class="form-error" id="error-serviciu"></span>
             </div>
             <div class="form-group">
@@ -845,14 +852,20 @@ function renderStars($rating) {
                             <span class="form-error" id="error-contact-nume"></span>
                         </div>
                         <div class="form-group">
-                            <label for="contact-service"><?php _e('form_service'); ?> *</label>
-                            <select id="contact-service" name="serviciu" required>
-                                <option value=""><?php _e('form_service_placeholder'); ?></option>
-                                <?php foreach ($services as $service): ?>
-                                <option value="<?php echo e(strtolower($service['title'])); ?>"><?php echo e(t($service, 'title')); ?></option>
-                                <?php endforeach; ?>
-                                <option value="altele"><?php _e('form_service_other'); ?></option>
-                            </select>
+                            <label><?php _e('form_service'); ?> *</label>
+                            <input type="hidden" id="contact-service" name="serviciu" required value="">
+                            <div class="service-selector" id="contactServiceSelector">
+                                <button type="button" class="service-btn" id="contactServiceBtn">
+                                    <span class="service-current" data-placeholder="<?php _e('form_service_placeholder'); ?>"><?php _e('form_service_placeholder'); ?></span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+                                </button>
+                                <div class="service-dropdown" id="contactServiceDropdown">
+                                    <?php foreach ($services as $service): ?>
+                                    <div class="service-option" data-value="<?php echo e(strtolower($service['title'])); ?>"><?php echo e(t($service, 'title')); ?></div>
+                                    <?php endforeach; ?>
+                                    <div class="service-option" data-value="altele"><?php _e('form_service_other'); ?></div>
+                                </div>
+                            </div>
                             <span class="form-error" id="error-contact-serviciu"></span>
                         </div>
                         <div class="form-group">
@@ -885,7 +898,7 @@ function renderStars($rating) {
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="#" class="footer-logo">
-                        <img src="/img/logo.png" alt="Cetățenia Română Logo" class="logo-img" style="height:120px;max-width:500px;object-fit:contain;"/>
+                        <img src="<?php echo SITE_URL; ?>/img/logo2.png" alt="Cetățenia Română Logo" class="logo-img" style="height:120px;max-width:500px;object-fit:contain;"/>
                     </a>
                     <p class="footer-description"><?php _e('footer_description'); ?></p>
                 </div>
@@ -1108,6 +1121,126 @@ function renderStars($rating) {
             }
         });
     });
+    </script>
+
+    <!-- Service Dropdown Script -->
+    <script>
+    (function() {
+        var activeDropdown = null;
+        var activeBtn = null;
+        var dropdownData = {};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setupServiceDropdown('consultationServiceSelector', 'consultation-serviciu');
+            setupServiceDropdown('contactServiceSelector', 'contact-service');
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.service-selector') && !e.target.closest('.service-dropdown-portal')) {
+                    closeDropdown();
+                }
+            });
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeDropdown();
+            });
+            
+            // Close on scroll only if not scrolling inside dropdown
+            window.addEventListener('scroll', function(e) {
+                if (e.target && (e.target.classList && e.target.classList.contains('service-dropdown-portal'))) {
+                    return; // Don't close if scrolling inside dropdown
+                }
+                closeDropdown();
+            }, true);
+            window.addEventListener('resize', closeDropdown);
+        });
+        
+        function closeDropdown() {
+            if (activeDropdown) {
+                activeDropdown.classList.remove('active');
+                activeDropdown = null;
+            }
+            if (activeBtn) {
+                activeBtn.classList.remove('active');
+                activeBtn = null;
+            }
+            var portal = document.querySelector('.service-dropdown-portal');
+            if (portal) portal.remove();
+        }
+        
+        function setupServiceDropdown(selectorId, inputId) {
+            var selector = document.getElementById(selectorId);
+            var input = document.getElementById(inputId);
+            if (!selector || !input) return;
+            
+            var btn = selector.querySelector('.service-btn');
+            var dropdown = selector.querySelector('.service-dropdown');
+            var currentSpan = btn.querySelector('.service-current');
+            
+            if (currentSpan && !input.value) {
+                currentSpan.classList.add('placeholder');
+            }
+            
+            dropdownData[selectorId] = { btn: btn, dropdown: dropdown, input: input, currentSpan: currentSpan };
+            
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (activeBtn === btn) {
+                    closeDropdown();
+                    return;
+                }
+                
+                closeDropdown();
+                
+                // Clone dropdown and append to body
+                var portal = dropdown.cloneNode(true);
+                portal.classList.add('service-dropdown-portal');
+                portal.id = selectorId + '-portal';
+                document.body.appendChild(portal);
+                
+                // Position it
+                var rect = btn.getBoundingClientRect();
+                portal.style.position = 'fixed';
+                portal.style.top = (rect.bottom + 4) + 'px';
+                portal.style.left = rect.left + 'px';
+                portal.style.width = rect.width + 'px';
+                portal.style.zIndex = '99999';
+                
+                // Show it
+                setTimeout(function() {
+                    portal.classList.add('active');
+                }, 10);
+                
+                btn.classList.add('active');
+                activeBtn = btn;
+                activeDropdown = portal;
+                
+                // Handle option clicks
+                portal.querySelectorAll('.service-option').forEach(function(option) {
+                    option.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var value = this.getAttribute('data-value');
+                        var text = this.textContent.trim();
+                        
+                        input.value = value;
+                        if (currentSpan) {
+                            currentSpan.textContent = text;
+                            currentSpan.classList.remove('placeholder');
+                        }
+                        
+                        // Update original dropdown selected state
+                        dropdown.querySelectorAll('.service-option').forEach(function(opt) {
+                            opt.classList.toggle('selected', opt.getAttribute('data-value') === value);
+                        });
+                        
+                        closeDropdown();
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+            });
+        }
+    })();
     </script>
 
     <script src="js/main.js"></script>

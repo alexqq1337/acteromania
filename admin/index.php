@@ -61,17 +61,7 @@ $csrfToken = generateCSRFToken();
         <div class="login-box">
             <div class="login-header">
                 <div class="login-logo">
-                    <svg viewBox="0 0 240 50" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="5" y="5" width="28" height="38" rx="2" fill="none" stroke="#1a365d" stroke-width="2.5"/>
-                        <path d="M23 5 L33 15 L23 15 Z" fill="#1a365d"/>
-                        <line x1="11" y1="22" x2="27" y2="22" stroke="#8b1c1c" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="11" y1="28" x2="27" y2="28" stroke="#8b1c1c" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="11" y1="34" x2="22" y2="34" stroke="#8b1c1c" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="30" cy="35" r="10" fill="#1a365d"/>
-                        <path d="M25 35 L28 38 L35 31" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <text x="48" y="32" font-family="'Poppins', sans-serif" font-size="22" font-weight="700" fill="#1a365d">Acte</text>
-                        <text x="98" y="32" font-family="'Poppins', sans-serif" font-size="22" font-weight="700" fill="#8b1c1c">România</text>
-                    </svg>
+                    <img src="../img/logo.png" alt="ActeRomânia" style="max-height: 60px; width: auto;">
                 </div>
                 <h1>Admin Panel</h1>
                 <p>Conectați-vă pentru a gestiona conținutul site-ului</p>
