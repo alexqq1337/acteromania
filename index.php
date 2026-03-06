@@ -202,6 +202,8 @@ function renderStars($rating) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo e($settings['site_title'] ?? 'CetățeniaRomână - Asistență Legală pentru Documente Românești'); ?></title>
     <meta name="description" content="<?php echo e($settings['meta_description'] ?? 'CetățeniaRomână - Servicii profesionale de asistență juridică pentru obținerea documentelor românești. Cetățenie, pașaport, buletin și consultanță juridică.'); ?>">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/img/CR.png">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/img/CR.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
