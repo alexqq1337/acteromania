@@ -15,6 +15,7 @@ define('SITE_URL', 'http://localhost/acteromania');
 define('ADMIN_URL', SITE_URL . '/admin');
 define('UPLOAD_PATH', __DIR__ . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
+define('DB_FILE_ENDPOINT', 'media-file.php');
 
 // Security
 define('CSRF_TOKEN_NAME', 'csrf_token');
@@ -98,77 +99,143 @@ function requireLogin() {
     }
 }
 
+function ensureDbFileStorageTable() {
+    static $initialized = false;
+    global $pdo;
+
+    if ($initialized) {
+        return;
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS uploaded_files (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        original_name VARCHAR(255) NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        file_size INT UNSIGNED NOT NULL,
+        content LONGBLOB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $initialized = true;
+}
+
+function getDbMaxAllowedPacket() {
+    static $value = null;
+    global $pdo;
+
+    if ($value !== null) {
+        return $value;
+    }
+
+    try {
+        $value = (int)$pdo->query("SELECT @@max_allowed_packet")->fetchColumn();
+    } catch (Throwable $e) {
+        $value = 0;
+    }
+
+    return $value;
+}
+
+function storeUploadedFileInDb($file, array $allowedTypes, $maxSize) {
+    global $pdo;
+
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return false;
+    }
+
+    if (($file['size'] ?? 0) > $maxSize) {
+        return false;
+    }
+
+    $mimeType = (string)($file['type'] ?? 'application/octet-stream');
+    if (!in_array($mimeType, $allowedTypes, true)) {
+        return false;
+    }
+
+    if (!is_uploaded_file($file['tmp_name'])) {
+        return false;
+    }
+
+    $content = file_get_contents($file['tmp_name']);
+    if ($content === false) {
+        return false;
+    }
+
+    $dbPacketLimit = getDbMaxAllowedPacket();
+    if ($dbPacketLimit > 0 && strlen($content) >= (int)($dbPacketLimit * 0.9)) {
+        return false;
+    }
+
+    ensureDbFileStorageTable();
+
+    $stmt = $pdo->prepare("INSERT INTO uploaded_files (original_name, mime_type, file_size, content) VALUES (?, ?, ?, ?)");
+    $stmt->bindValue(1, (string)($file['name'] ?? 'upload.bin'), PDO::PARAM_STR);
+    $stmt->bindValue(2, $mimeType, PDO::PARAM_STR);
+    $stmt->bindValue(3, (int)strlen($content), PDO::PARAM_INT);
+    $stmt->bindValue(4, $content, PDO::PARAM_LOB);
+    $stmt->execute();
+
+    return DB_FILE_ENDPOINT . '?id=' . (int)$pdo->lastInsertId();
+}
+
+function extractDbFileId($path) {
+    $value = trim((string)$path);
+    if ($value === '') {
+        return 0;
+    }
+
+    $parsed = parse_url($value);
+    if ($parsed === false) {
+        return 0;
+    }
+
+    $scriptPath = $parsed['path'] ?? $value;
+    if (basename($scriptPath) !== DB_FILE_ENDPOINT) {
+        return 0;
+    }
+
+    $query = $parsed['query'] ?? '';
+    parse_str($query, $params);
+    return isset($params['id']) ? (int)$params['id'] : 0;
+}
+
 // File upload helper
 function uploadImage($file, $folder = '') {
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     $maxSize = 5 * 1024 * 1024; // 5MB
-    
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        return false;
-    }
-    
-    if (!in_array($file['type'], $allowedTypes)) {
-        return false;
-    }
-    
-    if ($file['size'] > $maxSize) {
-        return false;
-    }
-    
-    $uploadDir = UPLOAD_PATH . ($folder ? $folder . '/' : '');
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-    
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid() . '_' . time() . '.' . $extension;
-    $filepath = $uploadDir . $filename;
-    
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        return 'uploads/' . ($folder ? $folder . '/' : '') . $filename;
-    }
-    
-    return false;
+
+    return storeUploadedFileInDb($file, $allowedTypes, $maxSize);
 }
 
 // Video upload helper
 function uploadVideo($file, $folder = '') {
     $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
     $maxSize = 50 * 1024 * 1024; // 50MB
-    
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        return false;
-    }
-    
-    if (!in_array($file['type'], $allowedTypes)) {
-        return false;
-    }
-    
-    if ($file['size'] > $maxSize) {
-        return false;
-    }
-    
-    $uploadDir = UPLOAD_PATH . ($folder ? $folder . '/' : '');
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-    
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid() . '_' . time() . '.' . $extension;
-    $filepath = $uploadDir . $filename;
-    
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        return 'uploads/' . ($folder ? $folder . '/' : '') . $filename;
-    }
-    
-    return false;
+
+    return storeUploadedFileInDb($file, $allowedTypes, $maxSize);
 }
 
 function deleteImage($filename, $folder = '') {
-    $filepath = UPLOAD_PATH . ($folder ? $folder . '/' : '') . $filename;
-    if (file_exists($filepath)) {
-        return unlink($filepath);
+    global $pdo;
+
+    $dbFileId = extractDbFileId($filename);
+    if ($dbFileId > 0) {
+        ensureDbFileStorageTable();
+        $stmt = $pdo->prepare("DELETE FROM uploaded_files WHERE id = ?");
+        return $stmt->execute([$dbFileId]);
     }
+
+    $normalized = ltrim(str_replace('\\', '/', (string)$filename), '/');
+    $legacyPath = __DIR__ . '/' . $normalized;
+
+    if (!file_exists($legacyPath)) {
+        $legacyPath = UPLOAD_PATH . ($folder ? $folder . '/' : '') . basename($normalized);
+    }
+
+    if (file_exists($legacyPath)) {
+        return unlink($legacyPath);
+    }
+
     return false;
 }
 

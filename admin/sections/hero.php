@@ -42,9 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uploaded = uploadVideo($_FILES['video'], 'hero');
                 if ($uploaded) {
                     // Delete old video if exists
-                    if ($videoPath && strpos($videoPath, 'uploads/') === 0) {
-                        $oldVideoPath = str_replace('uploads/hero/', '', $videoPath);
-                        @unlink(UPLOAD_PATH . 'hero/' . $oldVideoPath);
+                    if ($videoPath) {
+                        deleteImage($videoPath);
                     }
                     $videoPath = $uploaded;
                 }

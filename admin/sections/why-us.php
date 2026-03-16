@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($_FILES['image']['name'])) {
                 $uploaded = uploadImage($_FILES['image'], 'why-us');
                 if ($uploaded) {
-                    if ($imagePath && strpos($imagePath, 'uploads/') !== false) {
+                    if ($imagePath) {
                         deleteImage($imagePath);
                     }
                     $imagePath = $uploaded;
