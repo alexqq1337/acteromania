@@ -30,6 +30,8 @@ $phpFiles = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
 );
 
+
+
 $excludeParts = [
     DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR,
     DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR,
