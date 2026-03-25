@@ -12,6 +12,55 @@ $currentPage = 'translations';
 // Available languages for translation
 $languages = ['ru' => 'Русский', 'en' => 'English'];
 
+// Mapping between base content tables and normalized translation tables used by frontend
+$translationTableMap = [
+    'hero' => ['table' => 'hero_translations', 'fk' => 'hero_id'],
+    'about' => ['table' => 'about_translations', 'fk' => 'about_id'],
+    'services_section' => ['table' => 'services_section_translations', 'fk' => 'section_id'],
+    'services' => ['table' => 'services_translations', 'fk' => 'service_id'],
+    'process_section' => ['table' => 'process_section_translations', 'fk' => 'section_id'],
+    'process_steps' => ['table' => 'process_steps_translations', 'fk' => 'step_id'],
+    'faq_section' => ['table' => 'faq_section_translations', 'fk' => 'section_id'],
+    'faq' => ['table' => 'faq_translations', 'fk' => 'faq_id'],
+    'contact' => ['table' => 'contact_translations', 'fk' => 'contact_id'],
+    'why_us_items' => ['table' => 'why_us_items_translations', 'fk' => 'item_id'],
+    'about_stats' => ['table' => 'about_stats_translations', 'fk' => 'stat_id'],
+    'hero_trust_items' => ['table' => 'hero_trust_items_translations', 'fk' => 'trust_item_id'],
+];
+
+// Cache schema metadata to avoid repeated information_schema checks.
+$tableExistsCache = [];
+$tableColumnsCache = [];
+
+function translationTableExists(PDO $pdo, array &$cache, string $tableName): bool {
+    if (array_key_exists($tableName, $cache)) {
+        return $cache[$tableName];
+    }
+
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?"
+    );
+    $stmt->execute([$tableName]);
+
+    $cache[$tableName] = (int)$stmt->fetchColumn() > 0;
+    return $cache[$tableName];
+}
+
+function getTableColumns(PDO $pdo, array &$cache, string $tableName): array {
+    if (isset($cache[$tableName])) {
+        return $cache[$tableName];
+    }
+
+    $stmt = $pdo->query("SHOW COLUMNS FROM `$tableName`");
+    $columns = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $col) {
+        $columns[$col['Field']] = true;
+    }
+
+    $cache[$tableName] = $columns;
+    return $columns;
+}
+
 // Tables and fields that can be translated
 $translatableTables = [
     'hero' => [
@@ -113,10 +162,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 if (!empty($updates)) {
-                    $params[] = $recordId;
-                    $sql = "UPDATE $table SET " . implode(', ', $updates) . " WHERE {$translatableTables[$table]['idField']} = ?";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute($params);
+                    // 1) Persist to normalized translation tables used by frontend.
+                    if (isset($translationTableMap[$table])) {
+                        $target = $translationTableMap[$table];
+
+                        if (translationTableExists($pdo, $tableExistsCache, $target['table'])) {
+                            foreach ($languages as $langCode => $langName) {
+                                $columns = [];
+                                $values = [];
+
+                                foreach ($translatableTables[$table]['fields'] as $field) {
+                                    $columns[] = $field;
+                                    $values[] = $_POST[$field . '_' . $langCode] ?? null;
+                                }
+
+                                $insertColumns = array_merge([$target['fk'], 'language'], $columns);
+                                $placeholders = implode(', ', array_fill(0, count($insertColumns), '?'));
+                                $updatesSql = implode(', ', array_map(function ($col) {
+                                    return "$col = VALUES($col)";
+                                }, $columns));
+
+                                $upsertSql = "INSERT INTO {$target['table']} (" . implode(', ', $insertColumns) . ") "
+                                    . "VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updatesSql";
+
+                                $upsertParams = array_merge([$recordId, $langCode], $values);
+                                $upsertStmt = $pdo->prepare($upsertSql);
+                                $upsertStmt->execute($upsertParams);
+                            }
+                        }
+                    }
+
+                    // 2) Persist to legacy suffix columns only when they exist (safe compatibility layer).
+                    $existingColumns = getTableColumns($pdo, $tableColumnsCache, $table);
+                    $legacyUpdates = [];
+                    $legacyParams = [];
+
+                    foreach ($languages as $langCode => $langName) {
+                        foreach ($translatableTables[$table]['fields'] as $field) {
+                            $fieldName = $field . '_' . $langCode;
+                            if (isset($existingColumns[$fieldName]) && isset($_POST[$fieldName])) {
+                                $legacyUpdates[] = "$fieldName = ?";
+                                $legacyParams[] = $_POST[$fieldName];
+                            }
+                        }
+                    }
+
+                    if (!empty($legacyUpdates)) {
+                        $legacyParams[] = $recordId;
+                        $sql = "UPDATE $table SET " . implode(', ', $legacyUpdates) . " WHERE {$translatableTables[$table]['idField']} = ?";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute($legacyParams);
+                    }
                     
                     $_SESSION['flash_message'] = 'Traducerile au fost salvate!';
                     $_SESSION['flash_type'] = 'success';
@@ -156,6 +252,34 @@ if (isset($translatableTables[$selectedTable])) {
             $currentRecord = $records[0];
             $selectedId = $currentRecord[$idField];
         }
+
+        // Hydrate current record with values from normalized translation tables
+        // so existing website translations are editable from dashboard.
+        if ($currentRecord && isset($translationTableMap[$selectedTable])) {
+            $target = $translationTableMap[$selectedTable];
+            if (translationTableExists($pdo, $tableExistsCache, $target['table'])) {
+                $translationRowsStmt = $pdo->prepare(
+                    "SELECT * FROM {$target['table']} WHERE {$target['fk']} = ?"
+                );
+                $translationRowsStmt->execute([$selectedId]);
+                $translationRows = $translationRowsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($translationRows as $translationRow) {
+                    $langCode = $translationRow['language'] ?? '';
+                    if (!isset($languages[$langCode])) {
+                        continue;
+                    }
+
+                    foreach ($translatableTables[$selectedTable]['fields'] as $field) {
+                        $virtualField = $field . '_' . $langCode;
+                        $value = $translationRow[$field] ?? null;
+                        if ($value !== null && $value !== '') {
+                            $currentRecord[$virtualField] = $value;
+                        }
+                    }
+                }
+            }
+        }
     } catch (PDOException $e) {
         $records = [];
     }
@@ -172,7 +296,7 @@ include '../includes/header.php';
 }
 
 .translations-sidebar {
-    background: var(--white);
+    background: var(--admin-white);
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -185,8 +309,17 @@ include '../includes/header.php';
 .table-selector select {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--admin-gray-300);
     border-radius: 4px;
+    background: var(--admin-white);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.table-selector select:focus {
+    outline: none;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
 }
 
 .record-list {
@@ -206,16 +339,16 @@ include '../includes/header.php';
 }
 
 .record-item:hover {
-    background: var(--gray-100);
+    background: var(--admin-gray-100);
 }
 
 .record-item.active {
-    background: var(--primary);
+    background: var(--admin-primary);
     color: white;
 }
 
 .translations-main {
-    background: var(--white);
+    background: var(--admin-white);
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -224,7 +357,7 @@ include '../includes/header.php';
 .translation-group {
     margin-bottom: 2rem;
     padding: 1rem;
-    background: var(--gray-50);
+    background: var(--admin-gray-50);
     border-radius: 8px;
 }
 
@@ -233,6 +366,7 @@ include '../includes/header.php';
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: var(--admin-gray-900);
 }
 
 .lang-flag {
@@ -255,16 +389,25 @@ include '../includes/header.php';
     font-weight: 500;
     margin-bottom: 0.25rem;
     font-size: 0.85rem;
-    color: var(--gray-600);
+    color: var(--admin-gray-600);
 }
 
 .field-group input,
 .field-group textarea {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--admin-gray-300);
     border-radius: 4px;
     font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--admin-white);
+}
+
+.field-group input:focus,
+.field-group textarea:focus {
+    outline: none;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
 }
 
 .field-group textarea {
@@ -289,22 +432,23 @@ include '../includes/header.php';
 
 .field-hint {
     font-size: 0.75rem;
-    color: var(--gray-500);
+    color: var(--admin-gray-500);
     margin-top: 0.25rem;
 }
 
 .btn-save {
-    background: var(--primary);
+    background: var(--admin-primary);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
+    transition: all 0.2s;
 }
 
 .btn-save:hover {
-    opacity: 0.9;
+    background: var(--admin-primary-dark);
 }
 
 @media (max-width: 768px) {
@@ -347,10 +491,11 @@ include '../includes/header.php';
                         $displayValue = substr($displayValue, 0, 40) . '...';
                     }
                 ?>
-                <div class="record-item <?php echo $record[$idField] == $selectedId ? 'active' : ''; ?>"
-                     onclick="selectRecord('<?php echo $selectedTable; ?>', <?php echo $record[$idField]; ?>)">
+                <a href="translations.php?table=<?php echo urlencode($selectedTable); ?>&id=<?php echo $record[$idField]; ?>" 
+                   class="record-item <?php echo $record[$idField] == $selectedId ? 'active' : ''; ?>"
+                   style="text-decoration: none; color: inherit; display: block;">
                     <?php echo e($displayValue); ?>
-                </div>
+                </a>
                 <?php endforeach; ?>
             <?php else: ?>
                 <p style="color: var(--gray-500); padding: 0.5rem;">Nu există înregistrări</p>

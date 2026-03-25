@@ -360,20 +360,17 @@ function getTranslated($row, $field, $lang = null) {
     if ($lang === 'ro' || $lang === DEFAULT_LANGUAGE) {
         return $row[$field] ?? '';
     }
-    
-    // First try: the field itself (for JOINed translation queries from db_translations.php)
-    // The getXXXTranslated() functions use COALESCE to put the translation directly in the field
-    if (!empty($row[$field])) {
-        return $row[$field];
-    }
-    
-    // Second try: legacy suffix format (e.g., title_ru, title_en)
+
+    // First try: legacy suffix format (e.g., title_ru, title_en).
+    // This is required for admin-managed translations stored directly in base tables.
     $translatedField = $field . '_' . $lang;
     if (!empty($row[$translatedField])) {
         return $row[$translatedField];
     }
-    
-    // Fallback to base field
+
+    // Second try/fallback: the field itself.
+    // For JOIN-based translation queries from db_translations.php, COALESCE already places
+    // the translated value directly in the base field alias.
     return $row[$field] ?? '';
 }
 
