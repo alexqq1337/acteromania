@@ -64,6 +64,7 @@ return [
     'services_features' => 'Caracteristici',
     'services_price_from' => 'de la',
     'services_price_currency' => 'EUR',
+    'services_offers_transport' => 'Se oferă transport',
     
     // =============================================
     // SECȚIUNEA PROCES
@@ -93,7 +94,7 @@ return [
     'reviews_form_name' => 'Nume / Pseudonim',
     'reviews_form_name_placeholder' => 'Ex: Maria P.',
     'reviews_form_email' => 'Adresa ta de Email',
-    'reviews_form_email_placeholder' => 'exemplu@gmail.com',
+    'reviews_form_email_placeholder' => 'nume@exemplu.ro',
     'reviews_form_email_hint' => 'Folosim doar pentru verificare, nu va fi publicată.',
     'reviews_form_rating' => 'Rating',
     'reviews_star_5' => '5 stele - Excelent',
@@ -194,7 +195,6 @@ return [
     'error_name_max' => 'Numele nu poate depăși 100 de caractere',
     'error_email_required' => 'Email-ul este obligatoriu',
     'error_email_invalid' => 'Introduceți un email valid',
-    'error_email_gmail' => 'Vă rugăm să folosiți o adresă Gmail',
     'error_service_required' => 'Selectați un serviciu',
     'error_phone_required' => 'Numărul de telefon este obligatoriu',
     'error_phone_invalid' => 'Introduceți un număr valid',

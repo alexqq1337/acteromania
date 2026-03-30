@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS services (
     features TEXT, -- JSON array of features
     sort_order INT DEFAULT 0,
     enabled TINYINT(1) DEFAULT 1,
+    offers_transport TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -233,18 +234,18 @@ INSERT INTO admin_users (username, password_hash, email) VALUES
 
 -- Insert default Hero data
 INSERT INTO hero (title, subtitle, cta_text, cta_link, image_url, trust_bar_enabled) VALUES 
-('Asistență legală pentru documente românești', 
- 'Servicii sigure, legale și transparente pentru cetățenii din Moldova și diaspora',
- 'Programează o consultație',
+('Cetățenie română - Serviciu complet', 
+ 'Asistență juridică rapidă și profesională pentru obținerea cetățeniei române, a pașaportului și a cărții de identitate. Peste 15.000 de cazuri reușite.',
+ 'Consultație gratuită',
  '#contact',
  'https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop',
  1);
 
 -- Insert Hero Trust Items
 INSERT INTO hero_trust_items (icon_svg, text, sort_order) VALUES
-('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', '1000+ Clienți', 1),
-('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>', 'Servicii Legale', 2),
-('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', 'Confidențialitate Garantată', 3);
+('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', '15+ ani de experiență', 1),
+('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>', '15.000+ cazuri reușite', 2),
+('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', 'Termene scurte de procesare', 3);
 
 -- Insert default About data
 INSERT INTO about (section_label, title, content, image_url, counters_enabled) VALUES 

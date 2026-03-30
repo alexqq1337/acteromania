@@ -37,9 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($_FILES['image']['name'])) {
                 $imagePath = uploadImage($_FILES['image'], 'services');
             }
+            $offersTransport = !empty($_POST['offers_transport']) ? 1 : 0;
             
-            $stmt = $pdo->prepare("INSERT INTO services (title, short_description, full_description, icon_svg, image_url, features, sort_order) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO services (title, short_description, full_description, icon_svg, image_url, features, sort_order, offers_transport) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $order = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM services")->fetchColumn();
             $stmt->execute([
                 sanitizeInput($_POST['title']),
@@ -48,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['icon']),
                 $imagePath,
                 $_POST['features'],
-                $order
+                $order,
+                $offersTransport
             ]);
             $_SESSION['flash_message'] = 'Serviciu adăugat!';
             $_SESSION['flash_type'] = 'success';
@@ -69,9 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
+            $offersTransport = !empty($_POST['offers_transport']) ? 1 : 0;
             $stmt = $pdo->prepare("UPDATE services SET 
                 title = ?, short_description = ?, full_description = ?, icon_svg = ?, image_url = ?, 
-                features = ?, updated_at = NOW() 
+                features = ?, offers_transport = ?, updated_at = NOW() 
                 WHERE id = ?");
             $stmt->execute([
                 sanitizeInput($_POST['title']),
@@ -80,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['icon']),
                 $imagePath,
                 $_POST['features'],
+                $offersTransport,
                 (int)$_POST['service_id']
             ]);
             $_SESSION['flash_message'] = 'Serviciu actualizat!';
@@ -304,6 +308,14 @@ include '../includes/header.php';
                     <textarea id="service_features" name="features" class="form-control" rows="4" 
                               placeholder="Caracteristica 1&#10;Caracteristica 2&#10;Caracteristica 3"></textarea>
                 </div>
+                
+                <div class="form-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="offers_transport" id="service_offers_transport" value="1">
+                        <span class="toggle-slider"></span>
+                        <span>Se oferă transport (afișat în detalii pe site)</span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal()">Anulează</button>
@@ -318,6 +330,7 @@ function openServiceModal() {
     document.getElementById('serviceModalTitle').textContent = 'Adaugă Serviciu';
     document.getElementById('serviceAction').value = 'add_service';
     document.getElementById('serviceForm').reset();
+    document.getElementById('service_offers_transport').checked = false;
     document.getElementById('serviceImagePreview').innerHTML = '<div class="upload-placeholder"><span>Click pentru imagine</span></div>';
     document.getElementById('serviceImagePreview').classList.remove('has-image');
     document.getElementById('serviceModal').style.display = 'flex';
@@ -333,6 +346,7 @@ function editService(service) {
     document.getElementById('service_full_description').value = service.full_description || '';
     document.getElementById('service_icon').value = service.icon_svg || '';
     document.getElementById('service_features').value = service.features || '';
+    document.getElementById('service_offers_transport').checked = !!Number(service.offers_transport);
     
     if (service.image_url) {
         document.getElementById('serviceImagePreview').innerHTML = 

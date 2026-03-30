@@ -50,7 +50,7 @@ UPDATE services SET
     description = 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă în registrele românești.',
     short_description = 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă.',
     full_description = 'Servicii complete de transcriere a actelor de stare civilă (certificat de naștere, certificat de căsătorie, certificat de deces) din registrele străine în registrele românești. Necesar pentru obținerea actelor de identitate românești după cetățenie.',
-    features = '["Transcriere certificat naștere", "Transcriere certificat căsătorie", "Transcriere certificat deces", "Eliberare duplicate", "Rectificare date"]'
+    features = '["căsătorie / divorț / deces pe actul de naștere sau căsătorie", "Eliberare duplicate", "Rectificare date"]'
 WHERE id = 4;
 
 -- Serviciul 3: Buletin
@@ -119,7 +119,7 @@ INSERT INTO services_translations (service_id, language, title, description, sho
 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă în registrele românești.',
 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă.',
 'Servicii complete de transcriere a actelor de stare civilă (certificat de naștere, certificat de căsătorie, certificat de deces) din registrele străine în registrele românești. Necesar pentru obținerea actelor de identitate românești după cetățenie.',
-'["Transcriere certificat naștere", "Transcriere certificat căsătorie", "Transcriere certificat deces", "Eliberare duplicate", "Rectificare date"]');
+'["căsătorie / divorț / deces pe actul de naștere sau căsătorie", "Eliberare duplicate", "Rectificare date"]');
 
 -- Service 3: Buletin - RO
 INSERT INTO services_translations (service_id, language, title, description, short_description, full_description, features) VALUES
@@ -187,7 +187,7 @@ INSERT INTO services_translations (service_id, language, title, description, sho
 'Transcription of birth certificates, marriage certificates and other civil status documents into Romanian registers.',
 'Transcription of birth, marriage and other civil status certificates.',
 'Complete services for transcribing civil status documents (birth certificate, marriage certificate, death certificate) from foreign registers into Romanian registers. Required for obtaining Romanian identity documents after citizenship.',
-'["Birth certificate transcription", "Marriage certificate transcription", "Death certificate transcription", "Duplicate issuance", "Data correction"]');
+'["Marriage / divorce / death on the birth or marriage certificate", "Duplicate issuance", "Data correction"]');
 
 -- Service 3: ID Card - EN
 INSERT INTO services_translations (service_id, language, title, description, short_description, full_description, features) VALUES
@@ -255,7 +255,7 @@ INSERT INTO services_translations (service_id, language, title, description, sho
 'Транскрипция свидетельств о рождении, браке и других актов гражданского состояния в румынские реестры.',
 'Транскрипция свидетельств о рождении, браке и других актов.',
 'Полный комплекс услуг по транскрипции актов гражданского состояния (свидетельство о рождении, браке, смерти) из иностранных реестров в румынские. Необходимо для получения румынских документов после гражданства.',
-'["Транскрипция свидетельства о рождении", "Транскрипция свидетельства о браке", "Транскрипция свидетельства о смерти", "Выдача дубликатов", "Исправление данных"]');
+'["Брак / развод / смерть в свидетельстве о рождении или браке", "Выдача дубликатов", "Исправление данных"]');
 
 -- Service 3: Удостоверение личности - RU
 INSERT INTO services_translations (service_id, language, title, description, short_description, full_description, features) VALUES

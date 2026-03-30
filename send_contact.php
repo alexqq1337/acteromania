@@ -241,94 +241,17 @@ try {
 // Send to Telegram
 send_telegram_message($name, $phone, $service, $message);
 
-// Build email content
-$owner = 'vasilepopovici262@gmail.com';
+// Copie în jurnal (notificarea principală este Telegram)
 $subject = 'Mesaj contact de pe site: ' . ($service ?: 'formular general');
 $body = "Ați primit un mesaj din formularul de contact:\n\n";
 $body .= "Nume: " . $name . "\n";
 $body .= "Telefon: " . $phone . "\n";
-if ($service !== '') $body .= "Serviciu: " . $service . "\n";
+if ($service !== '') {
+    $body .= "Serviciu: " . $service . "\n";
+}
 $body .= "\nMesaj:\n" . $message . "\n";
+contact_log("CONTACT COPY\nSubject: {$subject}\n" . str_replace("\n", ' | ', $body));
 
-// Prefer Composer autoload if available
-$vendor_autoload = __DIR__ . '/vendor/autoload.php';
-if (file_exists($vendor_autoload)) {
-    require_once $vendor_autoload;
-    try {
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-
-        $smtp_user = 'vasilepopovici262@gmail.com';
-        $smtp_pass = str_replace(' ', '', 'twhz cgmp wvsw ntbb');
-
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = $smtp_user;
-        $mail->Password = $smtp_pass;
-        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-
-        $mail->setFrom($smtp_user, 'Website Contact');
-        $mail->addAddress($owner);
-
-        $mail->isHTML(false);
-        $mail->Subject = $subject;
-        $mail->Body = $body;
-
-        $mail->send();
-
-        echo json_encode(['success' => true, 'message' => __('form_success', 'Message sent successfully.')]);
-        exit;
-    } catch (\PHPMailer\PHPMailer\Exception $e) {
-        contact_log('PHPMailer (composer) error: ' . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => __('error_email_send', 'Error sending email. Please try again.')]);
-        exit;
-    }
-}
-
-// Fallback to bundled includes if present
-$phpmailer_base = __DIR__ . '/includes/PHPMailer/src/';
-if (file_exists($phpmailer_base . 'PHPMailer.php') && file_exists($phpmailer_base . 'SMTP.php')) {
-    try {
-        require_once $phpmailer_base . 'Exception.php';
-        require_once $phpmailer_base . 'PHPMailer.php';
-        require_once $phpmailer_base . 'SMTP.php';
-
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-
-        $smtp_user = 'vasilepopovici262@gmail.com';
-        $smtp_pass = str_replace(' ', '', 'twhz cgmp wvsw ntbb');
-
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = $smtp_user;
-        $mail->Password = $smtp_pass;
-        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-
-        $mail->setFrom($smtp_user, 'Website Contact');
-        $mail->addAddress($owner);
-
-        $mail->isHTML(false);
-        $mail->Subject = $subject;
-        $mail->Body = $body;
-
-        $mail->send();
-
-        echo json_encode(['success' => true, 'message' => __('form_success', 'Message sent successfully.')]);
-        exit;
-    } catch (Exception $e) {
-        contact_log('PHPMailer (includes) error: ' . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => __('error_email_send', 'Error sending email. Please try again.')]);
-        exit;
-    }
-}
-
-// Final fallback: write to logs
-contact_log("PHPMailer missing - contact message from {$name}: " . str_replace("\n", ' | ', $body));
 echo json_encode(['success' => true, 'message' => __('form_success', 'Message sent successfully.')]);
 exit;
 

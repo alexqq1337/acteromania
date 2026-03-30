@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     
     -- Datele recenziei
     name VARCHAR(80) NOT NULL COMMENT 'Numele utilizatorului',
-    email VARCHAR(120) NOT NULL COMMENT 'Adresa de Gmail',
+    email VARCHAR(120) NOT NULL COMMENT 'Adresa de email',
     title VARCHAR(100) NOT NULL COMMENT 'Titlul recenziei',
     message TEXT NOT NULL COMMENT 'Textul recenziei',
     rating TINYINT UNSIGNED NOT NULL COMMENT 'Rating 1-5 stele',

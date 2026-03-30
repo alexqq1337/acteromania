@@ -242,45 +242,36 @@ h4 { font-size: 1.25rem; }
 }
 
 /* ==========================================
-   CONSULTATION FORM - SLIDE-IN PANEL
+   CONSULTATION FORM — card fix în hero (mereu vizibil)
    ========================================== */
-.consultation-form-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--transition-normal);
-    z-index: 1998;
-}
-
-.consultation-form-overlay.active {
-    background-color: rgba(0, 0, 0, 0.5);
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.consultation-form-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    width: 400px;
+.hero-consultation-card {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
     background-color: var(--color-white);
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-    transform: translateX(100%);
-    transition: transform var(--transition-normal);
-    z-index: 1999;
-    overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    border-radius: var(--radius-lg);
+    overflow: visible;
+    z-index: 2;
     display: flex;
     flex-direction: column;
 }
 
-.consultation-form-panel.active {
-    transform: translateX(0);
+@media (min-width: 769px) {
+    .hero-consultation-card {
+        max-width: none;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        justify-self: stretch;
+    }
+}
+
+.consultation-form-header--hero {
+    justify-content: flex-start;
+    padding: var(--spacing-lg) var(--spacing-xl);
 }
 
 .consultation-form-header {
@@ -415,8 +406,9 @@ h4 { font-size: 1.25rem; }
 
 /* Responsive - Mobile */
 @media (max-width: 768px) {
-    .consultation-form-panel {
+    .hero-consultation-card {
         width: 100%;
+        max-width: 100%;
     }
 }
 
@@ -1077,6 +1069,52 @@ h4 { font-size: 1.25rem; }
 .hero > .container {
     position: relative;
     width: 100%;
+}
+
+.hero-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+    align-items: stretch;
+    width: 100%;
+    padding: var(--spacing-md) 0 var(--spacing-xl);
+}
+
+.hero-layout .hero-content {
+    max-width: 100%;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+@media (min-width: 769px) {
+    .hero-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: clamp(1.25rem, 3vw, 2.25rem);
+        align-items: stretch;
+        padding: var(--spacing-xl) 0;
+    }
+
+    .hero-layout .hero-content {
+        grid-column: 1;
+        max-width: none;
+        width: 100%;
+        min-width: 0;
+        justify-self: stretch;
+    }
+
+    .hero-layout .hero-consultation-card {
+        grid-column: 2;
+        transform: translateX(30%);
+    }
+
+    /* Text ~30% spre stânga, card ~30% spre dreapta (compensare animație fade-in pe text) */
+    .hero-layout .hero-content.fade-in:not(.visible) {
+        transform: translateY(30px) translateX(-30%);
+    }
+
+    .hero-layout .hero-content.fade-in.visible {
+        transform: translateY(0) translateX(-30%);
+    }
 }
 
 .hero-bg {
@@ -3647,8 +3685,8 @@ video.hero-video {
         padding: 0.65rem 0.25rem 0.65rem 0.4rem !important;
     }
     
-    /* Consultation Form Mobile */
-    .consultation-form-panel {
+    /* Consultation card în hero — mobil */
+    .hero-consultation-card {
         width: 100%;
         max-width: 100%;
     }

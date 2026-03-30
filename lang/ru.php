@@ -64,6 +64,7 @@ return [
     'services_features' => 'Особенности',
     'services_price_from' => 'от',
     'services_price_currency' => 'EUR',
+    'services_offers_transport' => 'Предоставляется транспорт',
     
     // =============================================
     // SECȚIUNEA PROCES
@@ -93,7 +94,7 @@ return [
     'reviews_form_name' => 'Имя / Псевдоним',
     'reviews_form_name_placeholder' => 'Напр.: Мария П.',
     'reviews_form_email' => 'Ваш Email адрес',
-    'reviews_form_email_placeholder' => 'example@gmail.com',
+    'reviews_form_email_placeholder' => 'email@primer.ru',
     'reviews_form_email_hint' => 'Используется только для верификации, не будет опубликован.',
     'reviews_form_rating' => 'Рейтинг',
     'reviews_star_5' => '5 звезд - Отлично',
@@ -196,7 +197,6 @@ return [
     'error_name_max' => 'Имя не должно превышать 100 символов',
     'error_email_required' => 'Email обязателен',
     'error_email_invalid' => 'Введите корректный email',
-    'error_email_gmail' => 'Пожалуйста, используйте Gmail адрес',
     'error_service_required' => 'Выберите услугу',
     'error_phone_required' => 'Номер телефона обязателен',
     'error_phone_invalid' => 'Введите корректный номер',

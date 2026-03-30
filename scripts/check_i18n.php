@@ -1,6 +1,9 @@
 <?php
 /**
- * i18n coverage checker
+ * i18n coverage checker (chei __/_e față de lang/*.php)
+ *
+ * Pentru raport complet (inclusiv DB CMS, JS _t, „identic cu RO”):
+ *   php scripts/translation_audit.php
  *
  * Usage:
  *   php scripts/check_i18n.php

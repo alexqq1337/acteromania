@@ -72,7 +72,7 @@ UPDATE services SET
     description = 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă în registrele românești.',
     short_description = 'Transcriere certificate de naștere, căsătorie și alte acte de stare civilă.',
     full_description = 'Servicii complete de transcriere a actelor de stare civilă (certificat de naștere, certificat de căsătorie, certificat de deces) din registrele străine în registrele românești. Necesar pentru obținerea actelor de identitate românești după cetățenie.',
-    features = '["Transcriere certificat naștere", "Transcriere certificat căsătorie", "Transcriere certificat deces", "Eliberare duplicate", "Rectificare date"]',
+    features = '["căsătorie / divorț / deces pe actul de naștere sau căsătorie", "Eliberare duplicate", "Rectificare date"]',
     sort_order = 5
 WHERE id = 4;
 

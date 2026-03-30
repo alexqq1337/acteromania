@@ -64,6 +64,7 @@ return [
     'services_features' => 'Features',
     'services_price_from' => 'from',
     'services_price_currency' => 'EUR',
+    'services_offers_transport' => 'Transport available',
     
     // =============================================
     // PROCESS SECTION
@@ -93,7 +94,7 @@ return [
     'reviews_form_name' => 'Name / Nickname',
     'reviews_form_name_placeholder' => 'E.g.: Maria P.',
     'reviews_form_email' => 'Your Email Address',
-    'reviews_form_email_placeholder' => 'example@gmail.com',
+    'reviews_form_email_placeholder' => 'you@example.com',
     'reviews_form_email_hint' => 'Used only for verification, will not be published.',
     'reviews_form_rating' => 'Rating',
     'reviews_star_5' => '5 stars - Excellent',
@@ -196,7 +197,6 @@ return [
     'error_name_max' => 'Name cannot exceed 100 characters',
     'error_email_required' => 'Email is required',
     'error_email_invalid' => 'Please enter a valid email',
-    'error_email_gmail' => 'Please use a Gmail address',
     'error_service_required' => 'Please select a service',
     'error_phone_required' => 'Phone number is required',
     'error_phone_invalid' => 'Please enter a valid number',

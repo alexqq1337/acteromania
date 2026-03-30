@@ -167,7 +167,6 @@ try {
     $whatsapp_digits = preg_replace('/[^0-9]/', '', $whatsapp_raw);
     $viber_raw = !empty($contact['viber']) ? $contact['viber'] : $office_raw;
     $viber_digits = preg_replace('/[^0-9]/', '', $viber_raw);
-    $email_raw = !empty($contact['email']) ? $contact['email'] : 'contact@acteromania.ro';
     $map_default_iframe = '<iframe src="https://www.google.com/maps?q=' . rawurlencode($default_address) . '&output=embed" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>';
     
     // Settings
@@ -308,40 +307,29 @@ function renderStars($rating) {
             <div class="hero-overlay" style="background: none;"></div>
         </div>
         <div class="container">
-            <div class="hero-content fade-in">
-                <h1 class="hero-title"><?php echo e(t($hero, 'title') ?: 'Asistență legală pentru documente românești'); ?></h1>
-                <p class="hero-subtitle"><?php echo e(t($hero, 'subtitle')); ?></p>
-                
-                <?php if (!empty($hero['trust_bar_enabled']) && !empty($heroTrustItems)): ?>
-                <div class="hero-trust-bar">
-                    <?php foreach ($heroTrustItems as $item): ?>
-                    <div class="trust-item">
-                        <?php if (!empty($item['icon_svg'])): ?>
-                            <?php echo html_entity_decode($item['icon_svg']); ?>
-                        <?php endif; ?>
-                        <span><?php echo e(t($item, 'text')); ?></span>
+            <div class="hero-layout">
+                <div class="hero-content fade-in">
+                    <h1 class="hero-title"><?php echo e(t($hero, 'title') ?: 'Asistență legală pentru documente românești'); ?></h1>
+                    <p class="hero-subtitle"><?php echo e(t($hero, 'subtitle')); ?></p>
+                    
+                    <?php if (!empty($hero['trust_bar_enabled']) && !empty($heroTrustItems)): ?>
+                    <div class="hero-trust-bar">
+                        <?php foreach ($heroTrustItems as $item): ?>
+                        <div class="trust-item">
+                            <?php if (!empty($item['icon_svg'])): ?>
+                                <?php echo html_entity_decode($item['icon_svg']); ?>
+                            <?php endif; ?>
+                            <span><?php echo e(t($item, 'text')); ?></span>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
-                
-                <button type="button" class="btn btn-primary btn-lg" id="consultationFormBtn"><?php echo e(t($hero, 'cta_text') ?: __('hero_cta_consultation')); ?></button>
-            </div>
-        </div>
-    </section>
 
-    <!-- SLIDE-IN CONSULTATION FORM -->
-    <div class="consultation-form-overlay" id="consultationFormOverlay"></div>
-    <div class="consultation-form-panel" id="consultationFormPanel">
-        <div class="consultation-form-header">
-            <h3 class="consultation-form-title"><?php _e('consultation_title'); ?></h3>
-            <button type="button" class="consultation-form-close" id="consultationFormClose" aria-label="<?php _e('consultation_close'); ?>">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
+                <div class="hero-consultation-card" id="consultationFormPanel">
+                    <div class="consultation-form-header consultation-form-header--hero">
+                        <h3 class="consultation-form-title"><?php _e('consultation_title'); ?></h3>
+                    </div>
         <form class="consultation-form" id="consultationForm" novalidate>
             <input type="hidden" name="source" value="consultation_form">
             <div class="form-group">
@@ -385,7 +373,10 @@ function renderStars($rating) {
             <button type="submit" class="btn btn-primary btn-full"><?php _e('form_submit'); ?></button>
             <p class="form-note"><?php _e('form_note'); ?></p>
         </form>
-    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- ABOUT SECTION -->
     <section class="section about" id="despre">
@@ -438,8 +429,8 @@ function renderStars($rating) {
             </div>
             <div class="services-scroll-container" id="servicesScrollContainer">
                 <div class="services-grid" id="servicesGrid">
-                    <?php foreach ($services as $index => $service): ?>
-                    <?php 
+                    <?php
+                    foreach ($services as $index => $service):
                     // Prepare translated service data for JavaScript modal
                     $serviceForJs = $service;
                     $serviceForJs['title_original'] = strtolower($service['title']); // Original title for dropdown matching
@@ -448,10 +439,11 @@ function renderStars($rating) {
                     $serviceForJs['short_description'] = t($service, 'short_description') ?: t($service, 'description');
                     $serviceForJs['full_description'] = t($service, 'full_description') ?: t($service, 'description');
                     $serviceForJs['features'] = t($service, 'features');
+                    $serviceForJs['offers_transport'] = isset($service['offers_transport']) && (int) $service['offers_transport'] === 1 ? 1 : 0;
                     ?>
                     <div class="service-card fade-in <?php echo $index >= 8 ? 'service-hidden' : ''; ?>" 
                          data-service-id="<?php echo $service['id']; ?>"
-                         onclick="openServiceModal(<?php echo htmlspecialchars(json_encode($serviceForJs)); ?>)">
+                         onclick="openServiceModal(<?php echo htmlspecialchars(json_encode($serviceForJs, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>)">
                         <div class="service-image">
                             <?php if (!empty($service['image_url'])): ?>
                             <img src="<?php echo e($service['image_url']); ?>" alt="<?php echo e(t($service, 'title')); ?>" class="service-main-image">
@@ -803,18 +795,6 @@ function renderStars($rating) {
                         </div>
                         <?php endif; ?>
                         
-                        <?php if (!empty($contact['email_enabled']) || !empty($email_raw)): ?>
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <?php echo !empty($contact['email_icon']) ? $contact['email_icon'] : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'; ?>
-                            </div>
-                            <div class="contact-text">
-                                <h4><?php _e('contact_email_label'); ?></h4>
-                                <a href="mailto:<?php echo e($email_raw); ?>"><?php echo e($email_raw); ?></a>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
                         <?php if (!empty($contact['address_enabled']) || !empty($contact['address'])): ?>
                         <div class="contact-item">
                             <div class="contact-icon">
@@ -933,11 +913,6 @@ function renderStars($rating) {
                     <?php if (!empty($contact['phone']) || !empty($office_raw)): ?>
                     <?php $phone_display = !empty($contact['phone']) ? $contact['phone'] : $office_raw; ?>
                     <p><strong><?php _e('contact_phone_label'); ?></strong><?php echo e($phone_display); ?></p>
-                    <?php endif; ?>
-                    <?php if (!empty($contact['email'])): ?>
-                    <p><strong><?php _e('contact_email_label'); ?></strong><?php echo e($contact['email']); ?></p>
-                    <?php else: ?>
-                    <p><strong><?php _e('contact_email_label'); ?></strong>contact@acteromania.ro</p>
                     <?php endif; ?>
                     <?php if (!empty($contact['address']) || !empty($default_address)): ?>
                     <p><strong><?php _e('contact_address_label'); ?></strong><?php echo e(!empty($contact['address']) ? $contact['address'] : $default_address); ?></p>
@@ -1245,7 +1220,7 @@ function renderStars($rating) {
     })();
     </script>
 
-    <script src="js/main.js"></script>
+    <script src="js/main.js?v=<?php echo (int) @filemtime(__DIR__ . '/js/main.js'); ?>"></script>
     <script>
     // Fallback simplu pentru deschiderea/închiderea modalului de recenzie
     document.addEventListener('DOMContentLoaded', function() {

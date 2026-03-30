@@ -539,92 +539,35 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 /**
- * Consultation Form - Slide-in Panel
+ * Consultation Form (embedded in hero)
  */
 function initConsultationForm() {
-    const formBtn = document.getElementById('consultationFormBtn');
-    const formPanel = document.getElementById('consultationFormPanel');
-    const formOverlay = document.getElementById('consultationFormOverlay');
-    const closeBtn = document.getElementById('consultationFormClose');
     const form = document.getElementById('consultationForm');
-    
-    if (!formBtn || !formPanel) return;
+    if (!form) return;
 
-    function openForm() {
-        formPanel.classList.add('active');
-        formOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    function closeForm() {
-        formPanel.classList.remove('active');
-        formOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-        // Clear form errors
         form.querySelectorAll('.form-error.show').forEach(el => {
             el.classList.remove('show');
         });
-    }
 
-    // Open form on button click
-    formBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (formPanel.classList.contains('active')) {
-            closeForm();
-        } else {
-            openForm();
-        }
-    });
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
 
-    // Close form on close button click
-    closeBtn.addEventListener('click', closeForm);
-
-    // Close form on overlay click
-    formOverlay.addEventListener('click', closeForm);
-
-    // Prevent closing when clicking on form itself
-    formPanel.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-
-    // Handle form submission
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Clear previous errors
-            form.querySelectorAll('.form-error.show').forEach(el => {
-                el.classList.remove('show');
+        const errors = validateConsultationForm(data);
+        if (Object.keys(errors).length > 0) {
+            Object.keys(errors).forEach(field => {
+                const errorEl = document.getElementById(`error-${field}`);
+                if (errorEl) {
+                    errorEl.textContent = errors[field];
+                    errorEl.classList.add('show');
+                }
             });
-
-            // Get form data
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData);
-
-            // Validation
-            const errors = validateConsultationForm(data);
-            if (Object.keys(errors).length > 0) {
-                // Show errors
-                Object.keys(errors).forEach(field => {
-                    const errorEl = document.getElementById(`error-${field}`);
-                    if (errorEl) {
-                        errorEl.textContent = errors[field];
-                        errorEl.classList.add('show');
-                    }
-                });
-                return;
-            }
-
-            // Submit form
-            submitConsultationForm(data, form);
-        });
-    }
-    
-    // Close form on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && formPanel.classList.contains('active')) {
-            closeForm();
+            return;
         }
+
+        submitConsultationForm(data, form);
     });
 }
 
@@ -680,7 +623,7 @@ function submitConsultationForm(data, form) {
             // Clear form
             form.reset();
             
-            // Show success message and close form
+            // Show success message
             const msgEl = document.createElement('div');
             msgEl.style.cssText = `
                 position: fixed;
@@ -700,9 +643,6 @@ function submitConsultationForm(data, form) {
             document.body.appendChild(msgEl);
 
             setTimeout(() => {
-                document.getElementById('consultationFormPanel').classList.remove('active');
-                document.getElementById('consultationFormOverlay').classList.remove('active');
-                document.body.style.overflow = '';
                 msgEl.style.animation = 'slideUp 0.3s ease';
                 setTimeout(() => msgEl.remove(), 300);
             }, 2000);
@@ -951,6 +891,10 @@ function openServiceModal(service) {
     // Set description (use full_description if available, otherwise short_description)
     descriptionEl.textContent = service.full_description || service.short_description || '';
     
+    const ot = service && service.offers_transport;
+    const offersTransport = ot === true || ot === 1 || ot === '1' || Number(ot) === 1;
+    const transportLabel = (window.TRANSLATIONS && window.TRANSLATIONS.services_offers_transport) || 'Se oferă transport';
+    
     // Set image
     if (service.image_url) {
         imageContainer.innerHTML = `<img src="${service.image_url}" alt="${service.title}">`;
@@ -962,29 +906,35 @@ function openServiceModal(service) {
         </svg>`;
     }
     
-    // Set features
+    // Set features (transport line last, when enabled)
     featuresEl.innerHTML = '';
+    const lines = [];
     if (service.features) {
         let features = service.features;
-        // If features is a string (JSON), parse it
         if (typeof features === 'string') {
             try {
                 features = JSON.parse(features);
             } catch (e) {
-                // If not valid JSON, split by newlines
-                features = features.split('\n').filter(f => f.trim());
+                features = features.split('\n').filter(f => String(f).trim());
             }
         }
         if (Array.isArray(features)) {
             features.forEach(feature => {
-                if (feature.trim()) {
-                    const li = document.createElement('li');
-                    li.textContent = feature.trim();
-                    featuresEl.appendChild(li);
+                const t = String(feature).trim();
+                if (t) {
+                    lines.push(t);
                 }
             });
         }
     }
+    if (offersTransport) {
+        lines.push(transportLabel);
+    }
+    lines.forEach(text => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        featuresEl.appendChild(li);
+    });
     
     // Show modal
     modal.classList.add('active');
@@ -1002,16 +952,15 @@ function closeServiceDetailModal() {
 }
 
 /**
- * Request selected service - opens consultation form with service pre-selected
+ * Request selected service - scrolls to hero consultation form with service pre-selected
  */
 function requestSelectedService() {
-    // Close the service detail modal
     closeServiceDetailModal();
-    
-    // Open consultation form
-    document.getElementById('consultationFormPanel').classList.add('active');
-    document.getElementById('consultationFormOverlay').classList.add('active');
-    document.body.style.overflow = 'hidden';
+
+    const panel = document.getElementById('consultationFormPanel');
+    if (panel) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     
     // Pre-select the service in the custom dropdown if we have a selected service
     if (currentSelectedService) {
