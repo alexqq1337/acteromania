@@ -98,11 +98,6 @@ $csrfToken = generateCSRFToken();
                     Conectare
                 </button>
             </form>
-            
-            <div class="login-footer">
-                <p>Credențiale implicite: <strong>admin</strong> / <strong>password</strong></p>
-                <p class="text-muted">Schimbați parola după prima conectare!</p>
-            </div>
         </div>
     </div>
 </body>

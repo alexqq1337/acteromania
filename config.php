@@ -12,7 +12,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // Site Configuration
 define('SITE_URL', 'http://localhost/acteromania');
-define('ADMIN_URL', SITE_URL . '/admin');
+define('ADMIN_URL', SITE_URL . '/control-panel-cetateniero');
 define('UPLOAD_PATH', __DIR__ . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
 define('DB_FILE_ENDPOINT', 'media-file.php');
@@ -21,9 +21,9 @@ define('DB_FILE_ENDPOINT', 'media-file.php');
 define('CSRF_TOKEN_NAME', 'csrf_token');
 define('SESSION_NAME', 'acteromania_session');
 
-// Admin credentials (change these in production!)
+// Admin credentials
 define('ADMIN_USERNAME', 'admin');
-define('ADMIN_PASSWORD_HASH', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'); // password: "password"
+define('ADMIN_PASSWORD_HASH', '$2y$10$Mxes5YuGpziiSzfpRyfNtuiOY5MIhcrc0cwfp9qygtaqM5vKW4BXe');
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
@@ -93,7 +93,7 @@ function isLoggedIn() {
 function requireLogin() {
     if (!isLoggedIn()) {
         $basePath = parse_url(SITE_URL, PHP_URL_PATH) ?: '';
-        $redirect = rtrim($basePath, '/') . '/admin/index.php';
+        $redirect = rtrim($basePath, '/') . '/control-panel-cetateniero/index.php';
         header('Location: ' . $redirect);
         exit;
     }

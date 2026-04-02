@@ -1,7 +1,5 @@
 {
-    "require": {
-        "phpmailer/phpmailer": "^7.0"
-    },
+    "require": {},
     "scripts": {
         "i18n:check": "php scripts/check_i18n.php"
     }

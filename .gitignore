@@ -3,3 +3,12 @@ logs/*
 
 uploads/*
 !uploads/.gitignore
+
+# Security files - DO NOT COMMIT
+SECURITY_README.txt
+control-panel-cetateniero/.htpasswd
+control-panel-cetateniero/.htaccess
+
+# Vendor dependencies (use composer install)
+vendor/
+composer.lock
