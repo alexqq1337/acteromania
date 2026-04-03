@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("UPDATE process_section SET title = ?, description = ?, updated_at = NOW() WHERE id = 1");
             $stmt->execute([sanitizeInput($_POST['title']), sanitizeInput($_POST['description'])]);
+            sync_process_section_from_db($pdo, 1);
             $_SESSION['flash_message'] = 'Secțiunea actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -49,6 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['features'],
                 $order
             ]);
+            $newPid = (int)$pdo->lastInsertId();
+            if ($newPid > 0) {
+                sync_process_step_from_db($pdo, $newPid);
+            }
             $_SESSION['flash_message'] = 'Pas adăugat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -79,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['features'],
                 (int)$_POST['step_id']
             ]);
+            sync_process_step_from_db($pdo, (int)$_POST['step_id']);
             $_SESSION['flash_message'] = 'Pas actualizat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {

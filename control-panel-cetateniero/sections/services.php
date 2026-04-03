@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("UPDATE services_section SET title = ?, description = ?, updated_at = NOW() WHERE id = 1");
             $stmt->execute([sanitizeInput($_POST['title']), sanitizeInput($_POST['description'])]);
+            sync_services_section_from_db($pdo, 1);
             $_SESSION['flash_message'] = 'Secțiunea actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -52,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $order,
                 $offersTransport
             ]);
+            $newSid = (int)$pdo->lastInsertId();
+            if ($newSid > 0) {
+                sync_service_from_base($pdo, $newSid);
+            }
             $_SESSION['flash_message'] = 'Serviciu adăugat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -86,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $offersTransport,
                 (int)$_POST['service_id']
             ]);
+            sync_service_from_base($pdo, (int)$_POST['service_id']);
             $_SESSION['flash_message'] = 'Serviciu actualizat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {

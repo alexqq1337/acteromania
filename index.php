@@ -15,6 +15,23 @@ define('RECAPTCHA_SITE_KEY', '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI');
 
 require_once __DIR__ . '/config.php';
 
+// PRG: un singur răspuns scurt (302) când se alege limba — evită 502 la Nginx/proxy când același
+// request seta cookie + genera pagina foarte mare (buffer/timeouts upstream).
+if (isset($_GET['lang']) && in_array($_GET['lang'], AVAILABLE_LANGUAGES, true)) {
+    setLanguagePreference($_GET['lang']);
+    session_write_close();
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    if ($path === '' || $path === null) {
+        $path = '/';
+    }
+    $params = $_GET;
+    unset($params['lang']);
+    $query = http_build_query($params);
+    $redirect = $path . ($query !== '' ? '?' . $query : '');
+    header('Location: ' . $redirect, true, 302);
+    exit;
+}
+
 // Get current language (must be before any output)
 $currentLang = getCurrentLanguage();
 $translations = loadTranslations($currentLang);
@@ -128,6 +145,16 @@ try {
     } catch (PDOException $e) {
         // Tabelul reviews nu există încă
     }
+
+    // Testimoniale CMS (tabelele testimonials + testimonials_section din dump)
+    $testimonialsSection = null;
+    $cmsTestimonials = [];
+    try {
+        $testimonialsSection = $pdo->query('SELECT * FROM testimonials_section LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+        $cmsTestimonials = $pdo->query('SELECT * FROM testimonials WHERE enabled = 1 ORDER BY sort_order ASC, id ASC')->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // tabele opționale
+    }
     
     // FAQ section - with translations
     try {
@@ -180,6 +207,20 @@ try {
     die("Error loading content: " . $e->getMessage());
 }
 
+// Titlu document din settings (site_title sau site_name + site_tagline din baza de date)
+$documentTitle = trim((string) ($settings['site_title'] ?? ''));
+if ($documentTitle === '') {
+    $sn = trim((string) ($settings['site_name'] ?? ''));
+    $st = trim((string) ($settings['site_tagline'] ?? ''));
+    if ($sn !== '' && $st !== '') {
+        $documentTitle = $sn . ' – ' . $st;
+    } elseif ($sn !== '') {
+        $documentTitle = $sn;
+    } else {
+        $documentTitle = 'CetățeniaRO - Asistență Legală pentru Documente Românești';
+    }
+}
+
 // Helper function to safely output content
 function e($str) {
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
@@ -199,7 +240,7 @@ function renderStars($rating) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo e($settings['site_title'] ?? 'CetățeniaRO - Asistență Legală pentru Documente Românești'); ?></title>
+    <title><?php echo e($documentTitle); ?></title>
     <meta name="description" content="<?php echo e($settings['meta_description'] ?? 'CetățeniaRO - Servicii profesionale de asistență juridică pentru obținerea documentelor românești. Cetățenie, pașaport, buletin și consultanță juridică.'); ?>">
     <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/img/CR.png">
     <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/img/CR.png">
@@ -241,11 +282,10 @@ function renderStars($rating) {
                     </button>
                     <div class="language-dropdown" id="langDropdown">
                         <?php 
-                        // Build URL preserving current path and hash
-                        $currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
+                        // Link relativ ?lang= — evită URL greșit din REQUEST_URI (Nginx/proxy) care poate cauza 502
                         foreach (AVAILABLE_LANGUAGES as $lang): 
                         ?>
-                        <a href="<?php echo $currentUrl; ?>?lang=<?php echo $lang; ?>" class="language-option <?php echo $lang === $currentLang ? 'active' : ''; ?>">
+                        <a href="?lang=<?php echo urlencode($lang); ?>" class="language-option <?php echo $lang === $currentLang ? 'active' : ''; ?>">
                             <span class="lang-code"><?php echo strtoupper($lang); ?></span>
                             <span class="lang-name"><?php echo getLanguageName($lang); ?></span>
                         </a>
@@ -302,9 +342,9 @@ function renderStars($rating) {
                     </video>
                 <?php endif; ?>
             <?php elseif (!empty($hero['image_url'])): ?>
-                <img src="<?php echo e($hero['image_url']); ?>" alt="Consultație legală profesională" loading="eager" style="filter: blur(6px) brightness(0.95) saturate(120%);">
+                    <img src="<?php echo e($hero['image_url']); ?>" alt="Consultație legală profesională" loading="eager" fetchpriority="high" decoding="async" style="filter: blur(6px) brightness(0.95) saturate(120%);">
             <?php endif; ?>
-            <div class="hero-overlay" style="background: none;"></div>
+            <div class="hero-overlay" aria-hidden="true"></div>
         </div>
         <div class="container">
             <div class="hero-layout">
@@ -384,7 +424,7 @@ function renderStars($rating) {
             <div class="about-grid">
                 <div class="about-image fade-in-left">
                     <?php if (!empty($about['image_url'])): ?>
-                    <img src="<?php echo e($about['image_url']); ?>" alt="Despre Cetățenia Română">
+                    <img src="<?php echo e($about['image_url']); ?>" alt="Despre Cetățenia Română" loading="lazy" decoding="async">
                     <?php endif; ?>
                 </div>
                 <div class="about-content fade-in-right">
@@ -446,7 +486,7 @@ function renderStars($rating) {
                          onclick="openServiceModal(<?php echo htmlspecialchars(json_encode($serviceForJs, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>)">
                         <div class="service-image">
                             <?php if (!empty($service['image_url'])): ?>
-                            <img src="<?php echo e($service['image_url']); ?>" alt="<?php echo e(t($service, 'title')); ?>" class="service-main-image">
+                            <img src="<?php echo e($service['image_url']); ?>" alt="<?php echo e(t($service, 'title')); ?>" class="service-main-image" loading="lazy" decoding="async">
                             <?php elseif (!empty($service['icon_svg'])): ?>
                             <span class="service-icon-svg"><?php echo html_entity_decode($service['icon_svg']); ?></span>
                             <?php endif; ?>
@@ -506,7 +546,7 @@ function renderStars($rating) {
                     <div class="timeline-content<?php echo ($index % 2 == 1) ? ' timeline-content-reverse' : ''; ?>">
                         <div class="timeline-image-container">
                             <?php if (!empty($step['image_url'])): ?>
-                            <img src="<?php echo e($step['image_url']); ?>" alt="<?php echo e(t($step, 'title')); ?>">
+                            <img src="<?php echo e($step['image_url']); ?>" alt="<?php echo e(t($step, 'title')); ?>" loading="lazy" decoding="async">
                             <?php endif; ?>
                         </div>
                         <div class="timeline-text">
@@ -559,20 +599,37 @@ function renderStars($rating) {
                 </div>
                 <div class="why-us-image fade-in-right">
                     <?php if (!empty($whyUs['image_url'])): ?>
-                    <img src="<?php echo e($whyUs['image_url']); ?>" alt="<?php _e('why_us_image_alt'); ?>">
+                    <img src="<?php echo e($whyUs['image_url']); ?>" alt="<?php _e('why_us_image_alt'); ?>" loading="lazy" decoding="async">
                     <?php endif; ?>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- REVIEWS SECTION (Recenzii de la utilizatori) -->
+    <!-- REVIEWS / TESTIMONIALE (antet + carduri din DB: testimonials_section, testimonials, reviews) -->
     <section class="section testimonials" id="recenzii">
         <div class="container">
             <div class="section-header text-center fade-in">
-                <span class="section-label"><?php _e('reviews_section_label'); ?></span>
-                <h2 class="section-title"><?php _e('reviews_title'); ?></h2>
+                <span class="section-label"><?php
+                    $tsl = ($testimonialsSection ?? [])['section_label'] ?? '';
+                    echo $tsl !== '' ? e($tsl) : '';
+                    if ($tsl === '') {
+                        _e('reviews_section_label');
+                    }
+                ?></span>
+                <h2 class="section-title"><?php
+                    $tst = ($testimonialsSection ?? [])['title'] ?? '';
+                    echo $tst !== '' ? e($tst) : '';
+                    if ($tst === '') {
+                        _e('reviews_title');
+                    }
+                ?></h2>
+                <?php $tsd = ($testimonialsSection ?? [])['description'] ?? ''; ?>
+                <?php if ($tsd !== ''): ?>
+                <p class="section-description"><?php echo e($tsd); ?></p>
+                <?php else: ?>
                 <p class="section-description"><?php _e('reviews_description'); ?></p>
+                <?php endif; ?>
             </div>
             
             <!-- Buton mare pentru adăugare recenzie -->
@@ -586,28 +643,47 @@ function renderStars($rating) {
                 </button>
             </div>
             
-            <!-- Lista de recenzii aprobate -->
             <div class="testimonials-grid" id="reviews-container">
-                <?php if (!empty($reviews)): ?>
-                    <?php foreach ($reviews as $review): ?>
-                    <div class="testimonial-card fade-in">
-                        <div class="testimonial-content">
-                            <div class="testimonial-stars"><?php echo renderStars($review['rating']); ?></div>
-                            <?php if (!empty($review['title'])): ?>
-                            <h4 class="testimonial-title"><?php echo e($review['title']); ?></h4>
-                            <?php endif; ?>
-                            <p class="testimonial-text">"<?php echo e($review['message']); ?>"</p>
-                        </div>
-                        <div class="testimonial-author">
-                            <div class="testimonial-avatar"><?php echo strtoupper(mb_substr($review['name'], 0, 1)); ?></div>
-                            <div class="author-info">
-                                <h4><?php echo e($review['name']); ?></h4>
-                                <span><?php echo date('d.m.Y', strtotime($review['created_at'])); ?></span>
-                            </div>
+                <?php foreach ($cmsTestimonials as $t): ?>
+                <div class="testimonial-card fade-in">
+                    <div class="testimonial-content">
+                        <div class="testimonial-stars"><?php echo renderStars((int) ($t['rating'] ?? 5)); ?></div>
+                        <p class="testimonial-text">"<?php echo e($t['testimonial_text']); ?>"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <?php if (!empty($t['client_photo'])): ?>
+                        <img src="<?php echo e($t['client_photo']); ?>" alt="" loading="lazy" decoding="async">
+                        <?php else: ?>
+                        <div class="testimonial-avatar"><?php echo strtoupper(mb_substr($t['client_name'] ?? '?', 0, 1)); ?></div>
+                        <?php endif; ?>
+                        <div class="author-info">
+                            <h4><?php echo e($t['client_name']); ?></h4>
+                            <span><?php echo e($t['client_location'] ?? ''); ?></span>
                         </div>
                     </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
+                </div>
+                <?php endforeach; ?>
+
+                <?php foreach ($reviews as $review): ?>
+                <div class="testimonial-card fade-in">
+                    <div class="testimonial-content">
+                        <div class="testimonial-stars"><?php echo renderStars($review['rating']); ?></div>
+                        <?php if (!empty($review['title'])): ?>
+                        <h4 class="testimonial-title"><?php echo e($review['title']); ?></h4>
+                        <?php endif; ?>
+                        <p class="testimonial-text">"<?php echo e($review['message']); ?>"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar"><?php echo strtoupper(mb_substr($review['name'], 0, 1)); ?></div>
+                        <div class="author-info">
+                            <h4><?php echo e($review['name']); ?></h4>
+                            <span><?php echo date('d.m.Y', strtotime($review['created_at'])); ?></span>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+
+                <?php if (empty($cmsTestimonials) && empty($reviews)): ?>
                     <div class="reviews-empty">
                         <p><?php _e('reviews_empty'); ?></p>
                     </div>

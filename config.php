@@ -6,12 +6,16 @@
 // Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'acteromania_cms');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'acteromania');
+define('DB_PASS', 'acteromania');
 define('DB_CHARSET', 'utf8mb4');
 
-// Site Configuration
-define('SITE_URL', 'http://localhost/acteromania');
+// Site Configuration — URL dinamic; https dacă cererea sau proxy-ul o indică
+$siteHost = isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST'] ? $_SERVER['HTTP_HOST'] : 'localhost:8080';
+$siteHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+    || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443')
+    || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+define('SITE_URL', ($siteHttps ? 'https://' : 'http://') . $siteHost);
 define('ADMIN_URL', SITE_URL . '/control-panel-cetateniero');
 define('UPLOAD_PATH', __DIR__ . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
@@ -21,13 +25,35 @@ define('DB_FILE_ENDPOINT', 'media-file.php');
 define('CSRF_TOKEN_NAME', 'csrf_token');
 define('SESSION_NAME', 'acteromania_session');
 
+/**
+ * HTTPS văzut de PHP (inclusiv după proxy / X-Forwarded-Proto)
+ */
+function isHttpsRequest(): bool {
+    return (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+}
+
 // Admin credentials
 define('ADMIN_USERNAME', 'admin');
 define('ADMIN_PASSWORD_HASH', '$2y$10$Mxes5YuGpziiSzfpRyfNtuiOY5MIhcrc0cwfp9qygtaqM5vKW4BXe');
 
-// Start session
+// Start session — cookie compatibil HTTPS + SameSite (evită probleme după schimbare limbă pe domeniu)
 if (session_status() === PHP_SESSION_NONE) {
     session_name(SESSION_NAME);
+    $secure = isHttpsRequest();
+    if (PHP_VERSION_ID >= 70300) {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    } else {
+        session_set_cookie_params(0, '/', '', $secure, true);
+    }
     session_start();
 }
 
@@ -35,7 +61,6 @@ if (session_status() === PHP_SESSION_NONE) {
 if (file_exists(__DIR__ . '/config/db_translations.php')) {
     require_once __DIR__ . '/config/db_translations.php';
 }
-
 // Database connection
 function getDB() {
     static $pdo = null;
@@ -92,9 +117,7 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        $basePath = parse_url(SITE_URL, PHP_URL_PATH) ?: '';
-        $redirect = rtrim($basePath, '/') . '/control-panel-cetateniero/index.php';
-        header('Location: ' . $redirect);
+        header('Location: ' . ADMIN_URL . '/index.php');
         exit;
     }
 }
@@ -245,17 +268,38 @@ function deleteImage($filename, $folder = '') {
 define('AVAILABLE_LANGUAGES', ['ro', 'ru', 'en']);
 define('DEFAULT_LANGUAGE', 'ro');
 
+// Sincronizare limba implicită (ro) panou → *_translations (după DEFAULT_LANGUAGE și db_translations)
+if (file_exists(__DIR__ . '/config/sync_default_lang.php')) {
+    require_once __DIR__ . '/config/sync_default_lang.php';
+}
+
 /**
- * Get current language from session/cookie/URL
+ * Persistă limba în sesiune + cookie (folosit la schimbare limbă din UI).
+ */
+function setLanguagePreference(string $lang): void {
+    if (!in_array($lang, AVAILABLE_LANGUAGES, true)) {
+        return;
+    }
+    $_SESSION['language'] = $lang;
+    $exp = time() + (365 * 24 * 60 * 60);
+    if (PHP_VERSION_ID >= 70300) {
+        setcookie('language', $lang, [
+            'expires' => $exp,
+            'path' => '/',
+            'secure' => isHttpsRequest(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    } else {
+        setcookie('language', $lang, $exp, '/', '', isHttpsRequest(), false);
+    }
+}
+
+/**
+ * Get current language from session/cookie
+ * (?lang= e tratat în index.php prin redirect PRG — nu mai încarcă tot HTML-ul în același request ca setarea cookie)
  */
 function getCurrentLanguage() {
-    // Check URL parameter first
-    if (isset($_GET['lang']) && in_array($_GET['lang'], AVAILABLE_LANGUAGES)) {
-        $_SESSION['language'] = $_GET['lang'];
-        setcookie('language', $_GET['lang'], time() + (365 * 24 * 60 * 60), '/');
-        return $_GET['lang'];
-    }
-    
     // Check session
     if (isset($_SESSION['language']) && in_array($_SESSION['language'], AVAILABLE_LANGUAGES)) {
         return $_SESSION['language'];

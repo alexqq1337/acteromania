@@ -1,0 +1,22 @@
+[Unit]
+Description=ActeRomânia CMS - PHP built-in server
+After=network.target mysql.service mariadb.service
+Wants=mysql.service mariadb.service
+
+[Service]
+Type=simple
+User=john
+Group=john
+WorkingDirectory=/home/john/acteromania
+ExecStart=/usr/bin/php -S 0.0.0.0:8080 -t /home/john/acteromania
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=acteromania
+
+# Pornire după ce rețeaua și MySQL sunt disponibile
+ExecStartPre=/bin/sleep 2
+
+[Install]
+WantedBy=multi-user.target

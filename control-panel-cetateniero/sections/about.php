@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_POST['description'], // Allow HTML
                     $imagePath
                 ]);
+                sync_about_default_lang($pdo, 1, sanitizeInput($_POST['subtitle']), sanitizeInput($_POST['title']), $_POST['description']);
             } else {
                 $stmt = $pdo->prepare("UPDATE about SET title = ?, section_label = ?, content = ?, image_url = ?, updated_at = NOW() WHERE id = 1");
                 
@@ -50,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_POST['description'], // Allow HTML
                     $imagePath
                 ]);
+                sync_about_default_lang($pdo, 1, sanitizeInput($_POST['subtitle']), sanitizeInput($_POST['title']), $_POST['description']);
             }
             
             $_SESSION['flash_message'] = 'Secțiunea Despre Noi actualizată!';
@@ -70,6 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['label']),
                 $order
             ]);
+            $sid = (int)$pdo->lastInsertId();
+            if ($sid > 0) {
+                sync_about_stat_default_lang($pdo, $sid, sanitizeInput($_POST['label']), sanitizeInput($_POST['suffix']));
+            }
             $_SESSION['flash_message'] = 'Statistică adăugată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -87,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['label']),
                 (int)$_POST['item_id']
             ]);
+            sync_about_stat_default_lang($pdo, (int)$_POST['item_id'], sanitizeInput($_POST['label']), sanitizeInput($_POST['suffix']));
             $_SESSION['flash_message'] = 'Statistică actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {

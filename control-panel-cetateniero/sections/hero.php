@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $videoType,
                     $mediaType
                 ]);
+                sync_hero_default_lang($pdo, 1, sanitizeInput($_POST['title']), sanitizeInput($_POST['subtitle']), sanitizeInput($_POST['cta_text']));
             } else {
                 $stmt = $pdo->prepare("UPDATE hero SET 
                     title = ?, 
@@ -90,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $videoType,
                     $mediaType
                 ]);
+                sync_hero_default_lang($pdo, 1, sanitizeInput($_POST['title']), sanitizeInput($_POST['subtitle']), sanitizeInput($_POST['cta_text']));
             }
             
             $_SESSION['flash_message'] = 'Secțiunea Acasă actualizată cu succes!';
@@ -109,6 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['text']),
                 $order
             ]);
+            $newTrustId = (int)$pdo->lastInsertId();
+            if ($newTrustId > 0) {
+                sync_hero_trust_item_default_lang($pdo, $newTrustId, sanitizeInput($_POST['text']));
+            }
             $_SESSION['flash_message'] = 'Element de încredere adăugat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -125,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['text']),
                 (int)$_POST['item_id']
             ]);
+            sync_hero_trust_item_default_lang($pdo, (int)$_POST['item_id'], sanitizeInput($_POST['text']));
             $_SESSION['flash_message'] = 'Element actualizat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {

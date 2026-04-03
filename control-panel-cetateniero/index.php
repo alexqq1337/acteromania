@@ -4,9 +4,9 @@
  */
 require_once '../config.php';
 
-// If already logged in, redirect to dashboard
+// If already logged in, redirect to dashboard (URL absolut ca să nu ajungă la /dashboard.php)
 if (isLoggedIn()) {
-    header('Location: dashboard.php');
+    header('Location: ' . ADMIN_URL . '/dashboard.php');
     exit;
 }
 
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = ?");
             $stmt->execute([$user['id']]);
             
-            header('Location: dashboard.php');
+            header('Location: ' . ADMIN_URL . '/dashboard.php');
             exit;
         } else {
             $error = 'Nume de utilizator sau parolă incorectă.';
@@ -54,7 +54,7 @@ $csrfToken = generateCSRFToken();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo ADMIN_URL; ?>/assets/css/admin.css">
 </head>
 <body class="login-page">
     <div class="login-container">
@@ -74,7 +74,7 @@ $csrfToken = generateCSRFToken();
             </div>
             <?php endif; ?>
             
-            <form method="POST" class="login-form">
+            <form method="POST" action="<?php echo ADMIN_URL; ?>/index.php" class="login-form">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 
                 <div class="form-group">

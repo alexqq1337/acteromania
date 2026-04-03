@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $stmt = $pdo->prepare("UPDATE why_us SET title = ?, image_url = ?, updated_at = NOW() WHERE id = 1");
             $stmt->execute([sanitizeInput($_POST['title']), $imagePath]);
+            sync_why_us_from_db($pdo, 1);
             $_SESSION['flash_message'] = 'Secțiunea actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -53,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['description']),
                 $order
             ]);
+            $wid = (int)$pdo->lastInsertId();
+            if ($wid > 0) {
+                sync_why_us_item_from_db($pdo, $wid);
+            }
             $_SESSION['flash_message'] = 'Element adăugat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -70,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitizeInput($_POST['description']),
                 (int)$_POST['item_id']
             ]);
+            sync_why_us_item_from_db($pdo, (int)$_POST['item_id']);
             $_SESSION['flash_message'] = 'Element actualizat!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {

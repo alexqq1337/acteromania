@@ -52,6 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $currentPassword = $_POST['current_password'];
             $newPassword = $_POST['new_password'];
             $confirmPassword = $_POST['confirm_password'];
+            $adminId = (int) ($_SESSION['admin_user_id'] ?? 0);
+            if ($adminId <= 0) {
+                throw new Exception('Sesiune invalidă. Autentificați-vă din nou.');
+            }
             
             if ($newPassword !== $confirmPassword) {
                 throw new Exception('Parolele nu coincid!');
@@ -61,19 +65,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Parola trebuie să aibă minim 8 caractere!');
             }
             
-            // Verify current password
-            $stmt = $pdo->prepare("SELECT password FROM admin_users WHERE id = ?");
-            $stmt->execute([$_SESSION['admin_id']]);
+            // Verify current password (coloana în DB este password_hash)
+            $stmt = $pdo->prepare('SELECT password_hash FROM admin_users WHERE id = ?');
+            $stmt->execute([$adminId]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if (!password_verify($currentPassword, $user['password'])) {
+            if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
                 throw new Exception('Parola curentă este incorectă!');
             }
             
-            // Update password
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE admin_users SET password = ? WHERE id = ?");
-            $stmt->execute([$hashedPassword, $_SESSION['admin_id']]);
+            $stmt = $pdo->prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?');
+            $stmt->execute([$hashedPassword, $adminId]);
             
             $_SESSION['flash_message'] = 'Parola a fost schimbată cu succes!';
             $_SESSION['flash_type'] = 'success';

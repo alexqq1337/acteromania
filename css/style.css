@@ -85,6 +85,9 @@
 html {
     scroll-behavior: smooth;
     font-size: 16px;
+    overflow-x: hidden;
+    max-width: 100%;
+    /* Evită „derapajul” orizontal pe iOS când există elemente fixed cu 100vw / -100vw */
 }
 
 body {
@@ -94,6 +97,9 @@ body {
     color: var(--color-gray-700);
     background-color: var(--color-white);
     overflow-x: hidden;
+    max-width: 100%;
+    position: relative;
+    overscroll-behavior-x: none;
 }
 
 img {
@@ -935,14 +941,14 @@ h4 { font-size: 1.25rem; }
         right: 0;
     }
     
-    /* Overlay pentru fundal */
+    /* Overlay fullscreen — fără left:-100vw (lărgea pagina și permite scroll orizontal pe mobil) */
     .nav::before {
         content: '';
         position: fixed;
-        top: 0;
-        left: -100vw;
-        width: 100vw;
-        height: 100vh;
+        inset: 0;
+        width: auto;
+        height: auto;
+        min-height: 100dvh;
         background: rgba(0, 0, 0, 0.5);
         opacity: 0;
         transition: opacity 0.3s ease;
@@ -1064,6 +1070,8 @@ h4 { font-size: 1.25rem; }
     display: flex;
     align-items: center;
     padding-top: 80px;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .hero > .container {
@@ -1159,9 +1167,11 @@ video.hero-video {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 100vw;
+    /* 100% în loc de 100vw — vw include bara de scroll pe unele browsere și poate depăși lățimea vizibilă */
+    width: 100%;
     height: 56.25vw; /* 16:9 aspect ratio */
     min-height: 100vh;
+    min-height: 100dvh;
     min-width: 177.77vh; /* 16:9 aspect ratio */
     transform: translate(-50%, -50%);
     pointer-events: none;
@@ -1171,13 +1181,14 @@ video.hero-video {
 @media (max-aspect-ratio: 16/9) {
     .hero-video-iframe {
         height: 100vh;
+        height: 100dvh;
         width: 177.77vh;
     }
 }
 
 @media (min-aspect-ratio: 16/9) {
     .hero-video-iframe {
-        width: 100vw;
+        width: 100%;
         height: 56.25vw;
     }
 }

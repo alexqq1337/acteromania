@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['map_embed'], // Allow HTML for embed
                 sanitizeInput($_POST['form_title'])
             ]);
+            sync_contact_from_db($pdo, 1);
             
             $_SESSION['flash_message'] = 'Informațiile de contact au fost actualizate!';
             $_SESSION['flash_type'] = 'success';

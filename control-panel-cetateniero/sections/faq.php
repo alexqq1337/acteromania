@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("UPDATE faq_section SET title = ?, updated_at = NOW() WHERE id = 1");
             $stmt->execute([sanitizeInput($_POST['title'])]);
+            sync_faq_section_from_db($pdo, 1);
             $_SESSION['flash_message'] = 'Secțiunea actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -40,6 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['answer'],
                 $order
             ]);
+            $fid = (int)$pdo->lastInsertId();
+            if ($fid > 0) {
+                sync_faq_from_base($pdo, $fid);
+            }
             $_SESSION['flash_message'] = 'Întrebare adăugată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
@@ -56,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['answer'],
                 (int)$_POST['faq_id']
             ]);
+            sync_faq_from_base($pdo, (int)$_POST['faq_id']);
             $_SESSION['flash_message'] = 'Întrebare actualizată!';
             $_SESSION['flash_type'] = 'success';
         } catch (PDOException $e) {
